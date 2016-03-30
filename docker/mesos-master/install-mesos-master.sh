@@ -19,7 +19,7 @@ addhost() {
         then
             echo "$HOSTNAME already exists : $(grep $HOSTNAME $ETC_HOSTS)"
         else
-            echo "Adding $HOSTNAME to your $ETC_HOSTS";
+            echo "Adding $IP to your $RESOLV_CONF";
             sudo sed -i "/127.0.0.1 localhost/a$HOST_LINE" $ETC_HOSTS
             if [ -n "$(grep $HOSTNAME /etc/hosts)" ]
                 then
@@ -30,7 +30,25 @@ addhost() {
     fi
 }
 
+addnameserver() {
+    IP=$1
+    RESOLV_CONF=/etc/resolv.conf
 
+    NAMESERVER_LINE="nameserver $IP"
+    if [ -n "$(grep $IP $RESOLV_CONF)" ]
+        then
+            echo "Nameserver entry already exists: $(grep $IP $RESOLV_CONF)"
+        else
+            echo "Adding $IP to your $RESOLV_CONF";
+            sudo sed -i "1s/^/$NAMESERVER_LINE\n/" $RESOLV_CONF
+             if [ -n "$(grep $HOSTNAME /etc/hosts)" ]
+                then
+                    echo "$IP was added succesfully: $(grep $IP $RESOLV_CONF)";
+                else
+                    echo "Failed to Add $IP, Try again!";
+            fi
+        fi
+}
 
     # Set Variables
     args=($@) 		
@@ -65,6 +83,7 @@ echo "
         mesos_master_ip=$internal_ip
         mesos_master_hostname_path="/etc/mesos-master/hostname"
         mesos_master_zookeeper_path="/etc/mesos/zk"
+        mesos_zookeeper_url="zk://$master1_hostname:2181,$master2_hostname:2181,$master3_hostname:2181/mesos"
 
         marathon_conf_path="/etc/marathon/conf"
 	    marathon_hostname_path="$marathon_conf_path/hostname"
@@ -100,7 +119,7 @@ echo "
 	    echo "Download mesosphere"
         sudo apt-get -y install mesosphere
         echo "Setup Zookeeper Connection Info for Mesos"
-        echo "zk://$master1_hostname:2181,$master2_hostname:2181,$master3_hostname:2181/mesos" | tee /etc/mesos/zk
+        echo "$mesos_zookeeper_url" | tee /etc/mesos/zk
 
         echo "Configure the Master Servers Zookeeper Configuration"
 	    echo "$masterNumber" | sudo tee /etc/zookeeper/conf/myid
@@ -137,16 +156,20 @@ echo "
         echo "Ensuring that server doesn't start the slave process at boot"
         echo echo manual | sudo tee /etc/init/mesos-slave.override
 
+
         echo "Install Docker"
-        sudo apt-get install -y apt-transport-https ca-certificates
-        sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
-        echo "deb https://apt.dockerproject.org/repo ubuntu-${CODENAME} main" | sudo tee /etc/apt/sources.list.d/docker.list
-        sudo apt-get update
-        sudo apt-get purge lxc-docker
-        sudo apt-cache policy docker-engine
-        sudo apt-get install -y linux-image-extra-$(uname -r)
-        sudo apt-get install -y apparmor
-        sudo apt-get install -y docker-engine
+        sudo apt-get install -y docker.io
+
+#        sudo apt-get install -y apt-transport-https ca-certificates
+#        sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
+#        echo "deb https://apt.dockerproject.org/repo ubuntu-${CODENAME} main" | sudo tee /etc/apt/sources.list.d/docker.list
+#        sudo apt-get update
+#        sudo apt-get purge lxc-docker
+#        sudo apt-cache policy docker-engine
+#        sudo apt-get install -y linux-image-extra-$(uname -r)
+#        sudo apt-get install -y apparmor
+#        sudo apt-get install -y docker-engine
+#        sudo apt-get install -y docker.io
 
 #        echo "Restarting Zookeeper to set up master elections"
 #        sudo restart zookeeper

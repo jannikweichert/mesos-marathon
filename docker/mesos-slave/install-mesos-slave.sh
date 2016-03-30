@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-if [ $# -ne 3 ]
+if [ $# -ne 4 ]
 then
-    echo "Usage: install-mesos-slave master1 master2 master3"
+    echo "Usage: install-mesos-slave master1 master2 master3 mesosdns_host"
 else
     # Declare Functions
     addhost() {
@@ -26,15 +26,38 @@ else
         fi
     }
 
+    addnameserver() {
+        IP=$1
+        RESOLV_CONF=/etc/resolv.conf
+
+        NAMESERVER_LINE="nameserver $IP"
+        if [ -n "$(grep $IP $RESOLV_CONF)" ]
+            then
+                echo "Nameserver entry already exists: $(grep $IP $RESOLV_CONF)"
+            else
+                echo "Adding $IP to your $RESOLV_CONF";
+                sudo sed -i "1s/^/$NAMESERVER_LINE\n/" $RESOLV_CONF
+                 if [ -n "$(grep $HOSTNAME /etc/hosts)" ]
+                    then
+                        echo "$IP was added succesfully: $(grep $IP $RESOLV_CONF)";
+                    else
+                        echo "Failed to Add $IP, Try again!";
+                fi
+            fi
+    }
+
     # Set Variables
     args=($@)
     master1_ip=$1
     master2_ip=$2
     master3_ip=$3
+    mesos_dns_host=$4
+
     echo "
         Internal IP of Master 1: $master1_ip
         Internal IP of Master 2: $master2_ip
-        Internal IP of Master 3: $master3_ip"
+        Internal IP of Master 3: $master3_ip
+        Host of Mesos-DNS: $mesos_dns_host"
 
 
     # Set static variables
@@ -73,6 +96,12 @@ else
 
     # Setup Zookeeper url for mesos-master detection
     echo "zk://master-01:2181,master-02:2181,master-03:2181/mesos" | tee /etc/mesos/zk
+
+    # Configure Mesos-DNS as Nameserver
+    addnameserver $mesos_dns_host
+
+    echo "Install Docker"
+    sudo apt-get install -y docker.io
 
     echo "Start Mesos Slave"
     sudo service mesos-slave restart
