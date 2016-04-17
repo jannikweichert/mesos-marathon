@@ -3,7 +3,7 @@ set -e
 
 if [ $# -ne 5 ]
 then
-    echo "Usage: install-mesos-ubuntu master1 master2 master3 externalIP masterNumber"
+    echo "Usage: install-mesos-master master1-IP master2-IP master3-IP masterNumber"
 else
 
 
@@ -51,26 +51,19 @@ addnameserver() {
 }
 
     # Set Variables
-    args=($@) 		
+    args=($@)
     master1_ip=$1
     master2_ip=$2
     master3_ip=$3
-    external_ip=$4
-    masterNumber=$5
+    masterNumber=$4
     internal_ip="${args[$masterNumber-1]}"
 echo "
         Internal IP of Master 1: $master1_ip
         Internal IP of Master 2: $master2_ip
         Internal IP of Master 3: $master3_ip
         I am Master number $masterNumber, so my internal IP is: $internal_ip
-        My External IP is: $external_ip"
-    echo "Continue? (yes/no)"
-#    read -p "Are you sure? " -n 1 -r
-    echo    # (optional) move to a new line
-#    if [[ $REPLY =~ ^[Yy]$ ]]
-#    then
+        Mesos will be bound to: $external_ip"
 
-        # do dangerous stuff
         # Set static variables
         master1_hostname="master-01"
         master2_hostname="master-02"
@@ -160,29 +153,29 @@ echo "
         echo "Install Docker"
         sudo apt-get install -y docker.io
 
-#        sudo apt-get install -y apt-transport-https ca-certificates
-#        sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
-#        echo "deb https://apt.dockerproject.org/repo ubuntu-${CODENAME} main" | sudo tee /etc/apt/sources.list.d/docker.list
-#        sudo apt-get update
-#        sudo apt-get purge lxc-docker
-#        sudo apt-cache policy docker-engine
-#        sudo apt-get install -y linux-image-extra-$(uname -r)
-#        sudo apt-get install -y apparmor
-#        sudo apt-get install -y docker-engine
-#        sudo apt-get install -y docker.io
+        sudo apt-get install -y apt-transport-https ca-certificates
+        sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
+        echo "deb https://apt.dockerproject.org/repo ubuntu-${CODENAME} main" | sudo tee /etc/apt/sources.list.d/docker.list
+        sudo apt-get update
+        sudo apt-get purge lxc-docker
+        sudo apt-cache policy docker-engine
+        sudo apt-get install -y linux-image-extra-$(uname -r)
+        sudo apt-get install -y apparmor
+        sudo apt-get install -y docker-engine
+        sudo apt-get install -y docker.io
 
-#        echo "Restarting Zookeeper to set up master elections"
-#        sudo restart zookeeper
-#        echo "Start Mesos Master"
-#        sudo restart mesos-master
-#        echo "Start Marathon"
-#        sudo restart marathon
+        echo "Start Zookeeper to set up master elections"
+        sudo start zookeeper & true
+        echo "Start Mesos Master"
+        sudo start mesos-master & true
+        echo "Start Marathon"
+        sudo start marathon & true
 
-#        echo "I'm done.
-#                Visit Mesos: http://$mesos_master_ip:5050
-#                Visit Marathon: http://$marathon_hostname:8080
-#                "
-#    fi
-fi
+        echo "I'm done.
+                Visit Mesos: http://$mesos_master_ip:5050
+                Visit Marathon: http://$marathon_hostname:8080
+                "
+        exit 0
+    fi
 
 

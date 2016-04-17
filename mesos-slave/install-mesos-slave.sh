@@ -105,4 +105,6 @@ else
 
     echo "Start Mesos Slave"
     sudo service mesos-slave restart
+
+    exit 0
 fi
